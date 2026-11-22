@@ -50,6 +50,7 @@ public final class MainActivity extends Activity {
     private TextView feederView;
     private TextView homeView;
     private TextView scheduleView;
+    private TextView memoView;
     private android.view.View previewRoot;
     private long previewUntil;
     private final Runnable publishPreview = () -> {
@@ -60,7 +61,7 @@ public final class MainActivity extends Activity {
             data.put("width", previewRoot.getWidth()); data.put("height", previewRoot.getHeight());
             JSONArray fields = new JSONArray();
             int[] rootLocation = new int[2]; previewRoot.getLocationOnScreen(rootLocation);
-            for (TextView view : new TextView[]{feederView, homeView, scheduleView, label}) {
+            for (TextView view : new TextView[]{feederView, homeView, scheduleView, memoView, label}) {
                 if (view == null || view.getVisibility() != android.view.View.VISIBLE) continue;
                 int[] location = new int[2]; view.getLocationOnScreen(location);
                 JSONObject field = new JSONObject();
@@ -78,6 +79,8 @@ public final class MainActivity extends Activity {
     };
     private String feederReading = "喂食器\n等待读取";
     private ScheduleMirror scheduleMirror;
+    private boolean scheduleReceived;
+    private final SystemDataMirror systemDataMirror = new SystemDataMirror();
     private boolean feederRequestRunning;
     private int screenOnCount;
     private int screenOffCount;
@@ -590,10 +593,17 @@ public final class MainActivity extends Activity {
         scheduleView.setTextColor(0xffd7ffe9);
         scheduleView.setTextSize(14);
         scheduleView.setGravity(Gravity.TOP | Gravity.START);
+        memoView = new TextView(this);
+        memoView.setTextColor(0xffd7ffe9);
+        memoView.setTextSize(14);
+        memoView.setMaxLines(2);
+        memoView.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        memoView.setGravity(Gravity.TOP | Gravity.START);
         LinearLayout leftColumn = new LinearLayout(this);
         leftColumn.setOrientation(LinearLayout.VERTICAL);
         leftColumn.addView(feederView, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
         leftColumn.addView(scheduleView, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
+        leftColumn.addView(memoView, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
         columns.addView(leftColumn, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1));
         columns.addView(homeView, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1));
         root.addView(columns, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
@@ -604,7 +614,10 @@ public final class MainActivity extends Activity {
         root.addView(label, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         setContentView(root);
         previewRoot = root;
-        scheduleMirror = new ScheduleMirror(getPreferences(MODE_PRIVATE).getString("rokid_schedule_mirror", "[]"));
+        String savedSchedule = getPreferences(MODE_PRIVATE).getString("rokid_schedule_mirror", null);
+        scheduleMirror = new ScheduleMirror(savedSchedule);
+        scheduleReceived = savedSchedule != null;
+        systemDataMirror.acceptMemos("Memo_Sync", getPreferences(MODE_PRIVATE).getString("rokid_memo_mirror", null));
         speechState = DIRECT_VOICE_ENABLED && !CompanionEndpoints.HOME_URL.isEmpty() ? "语音识别：NAS 本地" :
                 (SpeechRecognizer.isRecognitionAvailable(this) ? "眼镜识别：系统服务可用" : "眼镜识别：未发现系统服务");
         if (!hasDirectCredential()) probeDirectAccess();
@@ -660,13 +673,26 @@ public final class MainActivity extends Activity {
                 if (processBridge == shared) updateConnectionState("手机通信：连接中");
             }
             @Override public void onARTCStatus(float value, boolean connected) { }
-            @Override public void onRokidAccountChanged(String account) { }
+            @Override public void onRokidAccountChanged(String account) {
+                MainActivity owner = bridgeOwner;
+                if (processBridge == shared && owner != null) owner.runOnUiThread(() -> {
+                    if (bridgeOwner == owner) owner.clearSystemData();
+                });
+            }
         });
         int schedule = shared.subscribe("Schedule", (CXRServiceBridge.MsgCallback) (name, args, bytes) -> {
             if (processBridge != shared) return;
             MainActivity owner = bridgeOwner;
             if (owner != null) owner.receiveSchedule(args, bytes);
         });
+        // Memo support is optional on older device software. Keep the existing
+        // bridge operational when the host does not accept this subscription.
+        try {
+            shared.subscribe("Memo", (CXRServiceBridge.MsgCallback) (name, args, bytes) -> {
+                MainActivity owner = bridgeOwner;
+                if (processBridge == shared && owner != null) owner.receiveMemos(args);
+            });
+        } catch (RuntimeException | LinkageError ignored) { }
         int custom = shared.subscribe("rk_custom_client", (CXRServiceBridge.MsgCallback) (name, args, bytes) -> {
             if (processBridge != shared) return;
             MainActivity owner = bridgeOwner;
@@ -719,6 +745,7 @@ public final class MainActivity extends Activity {
             if (bridgeOwner != this) return;
             boolean accepted = scheduleMirror != null && scheduleMirror.accept(scheduleCommand, schedulePayload);
             if (accepted) {
+                scheduleReceived = true;
                 getPreferences(MODE_PRIVATE).edit().putString("rokid_schedule_mirror", scheduleMirror.serialize()).apply();
                 updateLabel();
             }
@@ -726,6 +753,31 @@ public final class MainActivity extends Activity {
             getPreferences(MODE_PRIVATE).edit().putString("schedule_channel_probe", diagnostic + "；" + outcome).apply();
             reportScheduleChannel();
         });
+    }
+
+    private void clearSystemData() {
+        scheduleMirror = new ScheduleMirror(null);
+        scheduleReceived = false;
+        systemDataMirror.clear();
+        getPreferences(MODE_PRIVATE).edit()
+                .remove("rokid_schedule_mirror").remove("rokid_memo_mirror").remove("schedule_channel_probe").apply();
+        updateLabel();
+    }
+
+    private void receiveMemos(Caps args) {
+        if (args == null || args.size() < 2) return;
+        try {
+            if (args.at(0).type() != Caps.Value.TYPE_STRING || args.at(1).type() != Caps.Value.TYPE_STRING) return;
+            String command = args.at(0).getString();
+            String payload = args.at(1).getString();
+            runOnUiThread(() -> {
+                if (bridgeOwner == this && systemDataMirror.acceptMemos(command, payload)) {
+                    getPreferences(MODE_PRIVATE).edit().putString("rokid_memo_mirror", systemDataMirror.savedMemos()).apply();
+                    android.util.Log.i("LeqiOrganizerSync", "Memo snapshot received");
+                    updateLabel();
+                }
+            });
+        } catch (RuntimeException ignored) { }
     }
 
     private void receiveCustomMessage(Caps args, byte[] bytes) {
@@ -736,7 +788,13 @@ public final class MainActivity extends Activity {
         runOnUiThread(() -> {
             if (bridgeOwner != this) return;
             messageCount++;
-            if ((received.startsWith("PHOTO_NATIVE_PARALLEL:") || received.startsWith("PHOTO_NATIVE_BENCH:") || received.startsWith("PHOTO_ALBUM_NEXT:"))) {
+            if (received.startsWith(SystemDataMirror.REQUEST)) {
+                String reply = systemDataMirror.reply(received, scheduleMirror, scheduleReceived);
+                boolean sent = reply != null && sendVoiceEvent(reply);
+                android.util.Log.i("LeqiOrganizerSync", "Reader request valid=" + (reply != null)
+                        + " sent=" + sent + " transport=" + (reply == null ? "not-sent" : lastMessageResult));
+                return;
+            } else if ((received.startsWith("PHOTO_NATIVE_PARALLEL:") || received.startsWith("PHOTO_NATIVE_BENCH:") || received.startsWith("PHOTO_ALBUM_NEXT:"))) {
                 if (nativePhotoParallelTransfer == null) nativePhotoParallelTransfer = new NativePhotoParallelTransfer(MainActivity.this,
                         response -> runOnUiThread(() -> sendVoiceEvent(response)));
                 nativePhotoParallelTransfer.start(received.replaceAll("[^a-zA-Z0-9_:.\\-].*", ""));
@@ -871,7 +929,7 @@ public final class MainActivity extends Activity {
     private static String findMessage(String text) {
         if (text == null) return "";
         int start = -1;
-        for (String prefix : new String[]{"PHOTO_ALBUM_NEXT:", "PHOTO_NATIVE_PARALLEL:", "PHOTO_NATIVE_BENCH:", "PHOTO_NATIVE_ARM:", "PHOTO_NATIVE_FETCH:", "PHOTO_NET_PROBE:", "PHOTO_LINK_START", "PHOTO_LINK_ACK:", "UPDATE_CHECK", "PREVIEW_START", "PREVIEW_STOP", "PAIR_OFFER:", "PAIR_SECRET:", "HOME_JSON:", "HOME:", "VOICE_CONFIRM_REQUEST:", "VOICE_RESULT:", "VOICE_STATUS:", "DIARY_ACCEPT:", "DIARY_STATUS:", "DIARY_EXIT"}) {
+        for (String prefix : new String[]{SystemDataMirror.REQUEST, "PHOTO_ALBUM_NEXT:", "PHOTO_NATIVE_PARALLEL:", "PHOTO_NATIVE_BENCH:", "PHOTO_NATIVE_ARM:", "PHOTO_NATIVE_FETCH:", "PHOTO_NET_PROBE:", "PHOTO_LINK_START", "PHOTO_LINK_ACK:", "UPDATE_CHECK", "PREVIEW_START", "PREVIEW_STOP", "PAIR_OFFER:", "PAIR_SECRET:", "HOME_JSON:", "HOME:", "VOICE_CONFIRM_REQUEST:", "VOICE_RESULT:", "VOICE_STATUS:", "DIARY_ACCEPT:", "DIARY_STATUS:", "DIARY_EXIT"}) {
             int candidate = text.indexOf(prefix);
             if (candidate >= 0 && (start < 0 || candidate < start)) start = candidate;
         }
@@ -1086,6 +1144,9 @@ public final class MainActivity extends Activity {
         homeView.setText(diaryMode ? "拍照后说日记\n请等待提示" : "家居\n" + reading);
         scheduleView.setVisibility(diaryMode || schedule.isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
         scheduleView.setText(schedule);
+        String memo = systemDataMirror.memoPreview();
+        memoView.setVisibility(diaryMode || memo.isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
+        memoView.setText(memo);
         label.setText(bridgeState + "  " + connectionState + "\n" + directState + "  " + speechState + "\n小米同学 · v0.34");
         if (previewUntil > android.os.SystemClock.elapsedRealtime()) {
             label.removeCallbacks(publishPreview); label.postDelayed(publishPreview, 300);

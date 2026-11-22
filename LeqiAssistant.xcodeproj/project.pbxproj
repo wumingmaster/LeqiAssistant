@@ -8,11 +8,43 @@
 
 /* Begin PBXBuildFile section */
 		54651AA4E6919A70A5F75703 /* Pods_LeqiAssistant.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D5C6EBFF8A3F403DC64054B /* Pods_LeqiAssistant.framework */; };
+		D224A0000000000000000001 /* OrganizerWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D224A0000000000000000004 /* OrganizerWidgets.swift */; };
+		D224A0000000000000000002 /* LeqiAssistant/OrganizerWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D224A0000000000000000005 /* LeqiAssistant/OrganizerWidgetData.swift */; };
+		D224A0000000000000000003 /* OrganizerWidgets.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = D224A0000000000000000006 /* OrganizerWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D224A0000000000000000009 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 523DB7AD2F1F296B008EA747 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D224A0000000000000000010;
+			remoteInfo = OrganizerWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D224A0000000000000000011 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				D224A0000000000000000003 /* OrganizerWidgets.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		523DB7B52F1F296B008EA747 /* LeqiAssistant.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LeqiAssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7D5C6EBFF8A3F403DC64054B /* Pods_LeqiAssistant.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_LeqiAssistant.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D224A0000000000000000004 /* OrganizerWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizerWidgets.swift; sourceTree = "<group>"; };
+		D224A0000000000000000005 /* LeqiAssistant/OrganizerWidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeqiAssistant/OrganizerWidgetData.swift; sourceTree = SOURCE_ROOT; };
+		D224A0000000000000000006 /* OrganizerWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = OrganizerWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D224A0000000000000000007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D224A0000000000000000008 /* AppGroup.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AppGroup.entitlements; sourceTree = "<group>"; };
 		DD93E2DA4389433E6B8FF1E5 /* Pods-LeqiAssistant.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LeqiAssistant.debug.xcconfig"; path = "Target Support Files/Pods-LeqiAssistant/Pods-LeqiAssistant.debug.xcconfig"; sourceTree = "<group>"; };
 		DE3B75925674CF95A0B77DB5 /* Pods-LeqiAssistant.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LeqiAssistant.release.xcconfig"; path = "Target Support Files/Pods-LeqiAssistant/Pods-LeqiAssistant.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -54,6 +86,7 @@
 			isa = PBXGroup;
 			children = (
 				523DB7B72F1F296B008EA747 /* LeqiAssistant */,
+				D224A0000000000000000012 /* OrganizerWidgets */,
 				523DB7B62F1F296B008EA747 /* Products */,
 				52F8CC00BAD22A3C63299673 /* Pods */,
 				816B15706D6D3DCBABA5A955 /* Frameworks */,
@@ -63,6 +96,7 @@
 		523DB7B62F1F296B008EA747 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				D224A0000000000000000006 /* OrganizerWidgets.appex */,
 				523DB7B52F1F296B008EA747 /* LeqiAssistant.app */,
 			);
 			name = Products;
@@ -85,6 +119,17 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		D224A0000000000000000012 /* OrganizerWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				D224A0000000000000000004 /* OrganizerWidgets.swift */,
+				D224A0000000000000000005 /* LeqiAssistant/OrganizerWidgetData.swift */,
+				D224A0000000000000000007 /* Info.plist */,
+				D224A0000000000000000008 /* AppGroup.entitlements */,
+			);
+			path = OrganizerWidgets;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -96,11 +141,13 @@
 				523DB7B12F1F296B008EA747 /* Sources */,
 				523DB7B22F1F296B008EA747 /* Frameworks */,
 				523DB7B32F1F296B008EA747 /* Resources */,
+				D224A0000000000000000011 /* Embed App Extensions */,
 				C48F0926FD60EBAF677C9763 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				D224A0000000000000000013 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				523DB7B72F1F296B008EA747 /* LeqiAssistant */,
@@ -109,6 +156,21 @@
 			productName = LeqiAssistant;
 			productReference = 523DB7B52F1F296B008EA747 /* LeqiAssistant.app */;
 			productType = "com.apple.product-type.application";
+		};
+		D224A0000000000000000010 /* OrganizerWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D224A0000000000000000018 /* Build configuration list for PBXNativeTarget "OrganizerWidgets" */;
+			buildPhases = (
+				D224A0000000000000000014 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = OrganizerWidgets;
+			productName = OrganizerWidgets;
+			productReference = D224A0000000000000000006 /* OrganizerWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -122,6 +184,19 @@
 				TargetAttributes = {
 					523DB7B42F1F296B008EA747 = {
 						CreatedOnToolsVersion = 26.0.1;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+						};
+					};
+					D224A0000000000000000010 = {
+						CreatedOnToolsVersion = 26.0.1;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+						};
 					};
 				};
 			};
@@ -140,6 +215,7 @@
 			projectRoot = "";
 			targets = (
 				523DB7B42F1F296B008EA747 /* LeqiAssistant */,
+				D224A0000000000000000010 /* OrganizerWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -208,7 +284,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D224A0000000000000000014 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D224A0000000000000000001 /* OrganizerWidgets.swift in Sources */,
+				D224A0000000000000000002 /* LeqiAssistant/OrganizerWidgetData.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D224A0000000000000000013 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D224A0000000000000000010 /* OrganizerWidgets */;
+			targetProxy = D224A0000000000000000009 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		523DB7C92F1F296D008EA747 /* Debug */ = {
@@ -216,9 +309,10 @@
 			baseConfigurationReference = DD93E2DA4389433E6B8FF1E5 /* Pods-LeqiAssistant.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = OrganizerWidgets/AppGroup.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = Y3LRBS7J53;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LeqiAssistant/Info.plist;
@@ -251,9 +345,10 @@
 			baseConfigurationReference = DE3B75925674CF95A0B77DB5 /* Pods-LeqiAssistant.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = OrganizerWidgets/AppGroup.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = Y3LRBS7J53;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LeqiAssistant/Info.plist;
@@ -402,6 +497,58 @@
 			};
 			name = Release;
 		};
+		D224A0000000000000000016 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = OrganizerWidgets/AppGroup.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = Y3LRBS7J53;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = OrganizerWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "乐奇助手";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = party.xiaoyu.glasses.leqiassistant.organizerwidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D224A0000000000000000017 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = OrganizerWidgets/AppGroup.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = Y3LRBS7J53;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = OrganizerWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "乐奇助手";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = party.xiaoyu.glasses.leqiassistant.organizerwidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -419,6 +566,15 @@
 			buildConfigurations = (
 				523DB7C92F1F296D008EA747 /* Debug */,
 				523DB7CA2F1F296D008EA747 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D224A0000000000000000018 /* Build configuration list for PBXNativeTarget "OrganizerWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D224A0000000000000000016 /* Debug */,
+				D224A0000000000000000017 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

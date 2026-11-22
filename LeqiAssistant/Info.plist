@@ -29,6 +29,8 @@
 	<array>
 		<string>rokidai</string>
 	</array>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>在乐奇助手中查看、新增、编辑或删除 iPhone 系统日程，并在日程小组件中显示近期安排。</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>通过本地网络将眼镜拍摄的照片传送到手机。</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

@@ -36,6 +36,8 @@ struct AssistantView: View {
     @ObservedObject var connection: GlassesConnection
     @ObservedObject var photo: PhotoActions
     @ObservedObject var recorder: GlassesRecorder
+    @ObservedObject var organizer: GlassesOrganizer
+    @ObservedObject var calendar: SystemCalendar
 
     var body: some View {
         NavigationStack {
@@ -74,6 +76,14 @@ struct AssistantView: View {
                 } footer: {
                     Text("原片传输和相册同步需要同一 Wi-Fi。相册同步需要更新眼镜端配套程序。")
                 }
+                Section("眼镜便签与日程") {
+                    NavigationLink(value: OrganizerView.Kind.memos) {
+                        Label("眼镜便签", systemImage: "note.text")
+                    }
+                    NavigationLink(value: OrganizerView.Kind.schedule) {
+                        Label("眼镜日程", systemImage: "calendar")
+                    }
+                }
                 Section("眼镜录音") {
                     Button {
                         if recorder.active { recorder.stop() }
@@ -92,6 +102,12 @@ struct AssistantView: View {
                 }
             }
             .navigationTitle("乐奇助手")
+            .navigationDestination(for: OrganizerView.Kind.self) { kind in
+                OrganizerView(kind: kind, organizer: organizer, calendar: calendar)
+            }
+            .navigationDestination(item: $organizer.destination) { kind in
+                OrganizerView(kind: kind, organizer: organizer, calendar: calendar)
+            }
         }
     }
 }

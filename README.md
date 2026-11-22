@@ -14,6 +14,14 @@
 - 「开始录音」请求眼镜麦克风传送 PCM，录音最多 5 分钟。停止、离开 App 或蓝牙断开时保存已收到的音频，可分享最近的 WAV 文件。
 - 当前 SDK 的公开拍照接口只能返回静态图片，实况照片暂未实现。iPhone 相册的实况照片需要配对的静态照片和短视频，现有拍照通道没有这些资源。
 
+### 眼镜便签与日程
+
+「眼镜便签」「眼镜日程」需安装眼镜配套 0.55 或更新版本，用于读取眼镜配套收到的 Rokid 同步记录。未收到对应记录时会显示提示。iPhone 主屏幕可添加同名小组件，打开乐奇助手完成同步后，小组件显示最近一次同步的摘要。
+
+在「眼镜日程 → iPhone 系统日历」可授权并使用 Apple 日历编辑器新增、修改或删除手机日程。开启 Rokid AI App 的手机日历同步后，可由 Rokid 同步到眼镜。Rokid 自建便签及日程仍使用只读的眼镜同步记录。日程小组件优先显示已授权的 iPhone 系统日历。
+
+在 Xcode 的两个目标中使用同一开发团队，并为 `LeqiAssistant` 和 `OrganizerWidgets` 注册、启用同一个 App Group，默认标识为 `group.party.xiaoyu.glasses.leqiassistant`。如果使用自己的 App Group，请在 `OrganizerWidgets/AppGroup.entitlements` 和 `LeqiAssistant/OrganizerWidgetData.swift` 中使用相同的标识。
+
 ## 快捷指令
 
 在「快捷指令 → App」中选择「乐奇助手」。包含「眼镜原声拍照」和「眼镜原声拍照传回手机」。之前使用「眼镜家居」动作的自建快捷指令可选择新版对应动作。URL 入口是 `leqiassistant://capture`（原生拍照）和 `leqiassistant://photo`（拍照并传输）。
@@ -38,13 +46,13 @@ xcodebuild -workspace LeqiAssistant.xcworkspace -scheme LeqiAssistant -destinati
 
 ```sh
 python3 GlassesCompanion/tools/build_dev_apk.py \
-  --code 53 --version 0.53 \
+  --code 55 --version 0.55 \
   --sdk "$ANDROID_SDK_ROOT" \
   --signer-dir "$LEQI_APK_SIGNER_DIR" \
-  --output /tmp/leqi-companion-0.53.apk
+  --output /tmp/leqi-companion-0.55.apk
 ```
 
-连接支持调试的 Rokid 眼镜后，可用 `adb install -r /tmp/leqi-companion-0.53.apk` 安装。仓库只保存源码和构建配置，SDK 文件、签名材料和生成的安装包在本地管理。
+连接支持调试的 Rokid 眼镜后，可用 `adb install -r /tmp/leqi-companion-0.55.apk` 安装。仓库只保存源码和构建配置，SDK 文件、签名材料和生成的安装包在本地管理。
 
 ### 可选的家居和局域网更新
 

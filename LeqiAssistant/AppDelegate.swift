@@ -21,6 +21,8 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private var connection: GlassesConnection?
     private let photo = PhotoActions()
     private let recorder = GlassesRecorder()
+    private let organizer = GlassesOrganizer()
+    private let calendar = SystemCalendar()
     private var pendingTransfer: Bool?
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options: UIScene.ConnectionOptions) {
@@ -28,7 +30,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let connection = GlassesConnection()
         self.connection = connection
         let window = UIWindow(windowScene: windowScene)
-        window.rootViewController = UIHostingController(rootView: AssistantView(connection: connection, photo: photo, recorder: recorder))
+        window.rootViewController = UIHostingController(rootView: AssistantView(connection: connection, photo: photo, recorder: recorder, organizer: organizer, calendar: calendar))
         self.window = window
         window.makeKeyAndVisible()
         for context in options.urlContexts { handle(context.url) }
@@ -36,6 +38,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func sceneDidBecomeActive(_ scene: UIScene) {
         connection?.activate()
+        calendar.refresh()
         runPendingAction()
     }
 
@@ -60,6 +63,8 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         switch parts.host?.lowercased() {
         case "capture": pendingTransfer = false
         case "photo": pendingTransfer = true
+        case "memos": organizer.destination = .memos; return
+        case "schedule": organizer.destination = .schedule; return
         default: return
         }
         if UIApplication.shared.applicationState == .active { runPendingAction() }
