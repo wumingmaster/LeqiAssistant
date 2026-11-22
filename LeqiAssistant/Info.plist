@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>party.xiaoyu.glasses.leqiassistant.auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>cxrlleqiassistant</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>party.xiaoyu.glasses.leqiassistant.photo</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>leqiassistant</string>
+			</array>
+		</dict>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>rokidai</string>
+	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>通过本地网络将眼镜拍摄的照片传送到手机。</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>将您通过快捷指令拍摄的眼镜照片保存到 iPhone 相册。</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+	</array>
+</dict>
+</plist>
