@@ -20,6 +20,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     private var connection: GlassesConnection?
     private let photo = PhotoActions()
+    private let timelapse = GlassesTimelapse()
     private let recorder = GlassesRecorder()
     private let organizer = GlassesOrganizer()
     private let calendar = SystemCalendar()
@@ -30,7 +31,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let connection = GlassesConnection()
         self.connection = connection
         let window = UIWindow(windowScene: windowScene)
-        window.rootViewController = UIHostingController(rootView: AssistantView(connection: connection, photo: photo, recorder: recorder, organizer: organizer, calendar: calendar))
+        window.rootViewController = UIHostingController(rootView: AssistantView(connection: connection, photo: photo, timelapse: timelapse, recorder: recorder, organizer: organizer, calendar: calendar))
         self.window = window
         window.makeKeyAndVisible()
         for context in options.urlContexts { handle(context.url) }
@@ -43,6 +44,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
+        timelapse.appDidEnterBackground()
         recorder.stop()
         connection?.deactivate()
     }

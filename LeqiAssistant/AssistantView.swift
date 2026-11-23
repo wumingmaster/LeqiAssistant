@@ -35,6 +35,7 @@ final class PhotoActions: ObservableObject {
 struct AssistantView: View {
     @ObservedObject var connection: GlassesConnection
     @ObservedObject var photo: PhotoActions
+    @ObservedObject var timelapse: GlassesTimelapse
     @ObservedObject var recorder: GlassesRecorder
     @ObservedObject var organizer: GlassesOrganizer
     @ObservedObject var calendar: SystemCalendar
@@ -48,6 +49,7 @@ struct AssistantView: View {
                     LabeledContent("蓝牙", value: connection.bluetoothConnected ? "已连接" : "未连接")
                     LabeledContent("Hi Rokid 授权", value: connection.authorized ? "已授权" : "未授权")
                     Button("连接 / 授权眼镜", action: connection.connectFromButton)
+                        .disabled(timelapse.active)
                 }
                 Section {
                     Button {
@@ -55,17 +57,23 @@ struct AssistantView: View {
                     } label: {
                         Label("原生拍照", systemImage: "camera")
                     }
-                    .disabled(photo.active || recorder.active)
+                    .disabled(photo.active || recorder.active || timelapse.active)
                     Button {
                         photo.capture(transfer: true)
                     } label: {
                         Label("拍照并传到相册", systemImage: "photo.badge.arrow.down")
                     }
-                    .disabled(photo.active || recorder.active)
+                    .disabled(photo.active || recorder.active || timelapse.active)
                     Button(action: photo.syncAlbum) {
                         Label("同步眼镜相册", systemImage: "arrow.clockwise")
                     }
-                    .disabled(photo.active || recorder.active)
+                    .disabled(photo.active || recorder.active || timelapse.active)
+                    NavigationLink {
+                        GlassesTimelapseView(timelapse: timelapse, photo: photo, recorder: recorder)
+                    } label: {
+                        Label("眼镜延时摄影", systemImage: "timelapse")
+                        if timelapse.active { ProgressView() }
+                    }
                     if !photo.message.isEmpty {
                         Text(photo.message)
                             .foregroundStyle(.secondary)
@@ -92,7 +100,7 @@ struct AssistantView: View {
                         Label(recorder.active ? "停止并保存录音" : "开始录音",
                               systemImage: recorder.active ? "stop.circle" : "mic")
                     }
-                    .disabled(photo.active)
+                    .disabled(photo.active || timelapse.active)
                     if !recorder.status.isEmpty {
                         Text(recorder.status).foregroundStyle(.secondary)
                     }
@@ -102,6 +110,9 @@ struct AssistantView: View {
                 }
             }
             .navigationTitle("乐奇助手")
+            .onChange(of: connection.bluetoothConnected) { _, connected in
+                if !connected { timelapse.glassesDidDisconnect() }
+            }
             .navigationDestination(for: OrganizerView.Kind.self) { kind in
                 OrganizerView(kind: kind, organizer: organizer, calendar: calendar)
             }

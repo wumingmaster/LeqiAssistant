@@ -55,6 +55,7 @@ struct GlassesPhotoSpeedTestIntent: AppIntent {
     private let parts: Int
     private let benchmark: Bool
     private let albumAfter: Int64?
+    private let albumThrough: Int64?
     private let openCompanion: Bool
     private(set) var albumPhotoID: Int64?
     private var transferStartedAt: Date?
@@ -70,11 +71,12 @@ struct GlassesPhotoSpeedTestIntent: AppIntent {
     private var finished = false
     private var accepted = false
     init(client: any RGCxrClient, parts: Int = 4, benchmark: Bool = false, albumAfter: Int64? = nil,
-         openCompanion: Bool = true) {
+         albumThrough: Int64? = nil, openCompanion: Bool = true) {
         self.client = client
         self.parts = parts
         self.benchmark = benchmark
         self.albumAfter = albumAfter
+        self.albumThrough = albumThrough
         self.openCompanion = openCompanion
     }
 
@@ -85,7 +87,7 @@ struct GlassesPhotoSpeedTestIntent: AppIntent {
         let takesPhoto = !benchmark && albumAfter == nil
         if takesPhoto { client.takePhoto() }
         if takesPhoto { NSLog("[即时分片拍照] 已请求原生快门，耗时 %.2f 秒", Date().timeIntervalSince(startedAt)) }
-        guard let host = wifiAddress() else { NSLog("[即时分片拍照] 手机没有 Wi-Fi 地址"); return .failure(takesPhoto ? "已触发原生拍照；手机未连接 Wi-Fi，照片留在眼镜中。" : "手机未连接 Wi-Fi，无法同步眼镜相册。") }
+        guard let host = Self.wifiAddress() else { NSLog("[即时分片拍照] 手机没有 Wi-Fi 地址"); return .failure(takesPhoto ? "已触发原生拍照；手机未连接 Wi-Fi，照片留在眼镜中。" : "手机未连接 Wi-Fi，无法同步眼镜相册。") }
         let maxBytes = 16 * 1024 * 1024 + (albumAfter == nil ? 0 : MemoryLayout<Int64>.size)
         return await withCheckedContinuation { continuation in
             let finish: (Outcome) -> Void = { [self] result in
@@ -138,7 +140,7 @@ struct GlassesPhotoSpeedTestIntent: AppIntent {
                                                     let prefix = image.prefix(MemoryLayout<Int64>.size)
                                                     guard prefix.count == MemoryLayout<Int64>.size else { throw CocoaError(.fileReadCorruptFile) }
                                                     let receivedID = prefix.reduce(Int64(0)) { ($0 << 8) | Int64($1) }
-                                                    guard receivedID > albumAfter else { throw CocoaError(.fileReadCorruptFile) }
+                                                    guard receivedID > albumAfter, receivedID <= (albumThrough ?? Int64.max) else { throw CocoaError(.fileReadCorruptFile) }
                                                     albumPhotoID = receivedID
                                                     image.removeFirst(prefix.count)
                                                 }
@@ -181,8 +183,10 @@ struct GlassesPhotoSpeedTestIntent: AppIntent {
                             DispatchQueue.main.asyncAfter(deadline: .now()+0.3) { [self] in
                                 guard !finished else { return }
                                 let k = key.withUnsafeBytes { Data($0).base64EncodedString() }.replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "")
-                                let commandName = albumAfter != nil ? "PHOTO_ALBUM_NEXT" : benchmark ? "PHOTO_NATIVE_BENCH" : "PHOTO_NATIVE_PARALLEL"
-                                let suffix = albumAfter.map { ":\($0)" } ?? (benchmark ? ":\(parts)" : "")
+                                let commandName = albumThrough != nil ? "PHOTO_TIMELAPSE_NEXT"
+                                    : albumAfter != nil ? "PHOTO_ALBUM_NEXT" : benchmark ? "PHOTO_NATIVE_BENCH" : "PHOTO_NATIVE_PARALLEL"
+                                let suffix = (albumAfter.map { ":\($0)" } ?? (benchmark ? ":\(parts)" : ""))
+                                    + (albumThrough.map { ":\($0)" } ?? "")
                                 let command = "\(commandName):\(id):\(host):\(port.rawValue):\(token):\(k):\(captureMillis)\(suffix)"
                                 @MainActor func sendIfNeeded(_ remaining: Int) {
                                     guard !finished, remaining > 0,
@@ -211,7 +215,7 @@ struct GlassesPhotoSpeedTestIntent: AppIntent {
             } catch { finish(.failure("无法建立传输，照片留在眼镜中。")) }
         }
     }
-    private func wifiAddress() -> String? {
+    static func wifiAddress() -> String? {
         var list: UnsafeMutablePointer<ifaddrs>?
         guard getifaddrs(&list) == 0 else { return nil }; defer { freeifaddrs(list) }
         var current = list

@@ -34,7 +34,7 @@
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>通过本地网络将眼镜拍摄的照片传送到手机。</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>将您通过快捷指令拍摄的眼镜照片保存到 iPhone 相册。</string>
+	<string>将眼镜拍摄的照片和延时视频保存到 iPhone 相册。</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

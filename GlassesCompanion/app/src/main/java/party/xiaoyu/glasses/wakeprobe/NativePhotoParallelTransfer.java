@@ -29,18 +29,27 @@ import javax.crypto.spec.SecretKeySpec;
 /** Explicit requests only. Do not guess when two recent camera images overlap. */
 final class NativePhotoParallelTransfer {
     interface Reply { void send(String value); }
+    static final String TIMELAPSE_MARK = "PHOTO_TIMELAPSE_MARK:";
+    static final String TIMELAPSE_NEXT = "PHOTO_TIMELAPSE_NEXT:";
     private static final Uri IMAGES = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
     private final Activity activity;
     private final Reply reply;
     private boolean busy;
     private String activeId;
+    private String activeMark;
+    private String lastMarkReply;
     private final java.util.LinkedHashMap<String, String> completedReplies = new java.util.LinkedHashMap<>();
     NativePhotoParallelTransfer(Activity activity, Reply reply) { this.activity = activity; this.reply = reply; }
 
     void start(String message) {
+        if (message.startsWith(TIMELAPSE_MARK)) {
+            markTimelapse(message.substring(TIMELAPSE_MARK.length()));
+            return;
+        }
         String[] p = message.split(":", -1);
         boolean benchmark = p[0].equals("PHOTO_NATIVE_BENCH");
-        boolean album = p[0].equals("PHOTO_ALBUM_NEXT");
+        boolean timelapse = message.startsWith(TIMELAPSE_NEXT);
+        boolean album = timelapse || p[0].equals("PHOTO_ALBUM_NEXT");
         android.util.Log.i("ParallelPhoto", "request received mode=" + p[0] + " fields=" + p.length);
         if (p.length < 2 || !p[1].matches("[a-f0-9]{32}")) {
             android.util.Log.i("ParallelPhoto", "request rejected: id");
@@ -51,16 +60,19 @@ final class NativePhotoParallelTransfer {
         if (completed != null) { reply.send(completed); return; }
         if (busy && id.equals(activeId)) { reply.send("PARALLEL_PHOTO_ACCEPTED:"+id); return; }
         if (busy) return;
-        if (p.length != (album || benchmark ? 8 : 7)) { reject(id, "fields"); return; }
+        if (p.length != (timelapse ? 9 : album || benchmark ? 8 : 7)) { reject(id, "fields"); return; }
         if (!privateAddress(p[2]) || !p[3].matches("[0-9]{1,5}")) { reject(id, "address"); return; }
         if (!p[4].matches("[a-f0-9]{32}") || !p[5].matches("[A-Za-z0-9_-]{43}")) { reject(id, "credentials"); return; }
         if (!p[6].matches("[0-9]{10,13}")) { reject(id, "timestamp"); return; }
         if (album && !p[7].matches("[0-9]{1,18}")) { reject(id, "cursor"); return; }
+        if (timelapse && !p[8].matches("[0-9]{1,18}")) { reject(id, "cursor"); return; }
         final String host=p[2], token=p[4];
         int port = Integer.parseInt(p[3]); long at = Long.parseLong(p[6]);
         final long after = album ? Long.parseLong(p[7]) : 0;
+        final long through = timelapse ? Long.parseLong(p[8]) : Long.MAX_VALUE;
+        if (timelapse && through <= after) { reject(id, "cursor"); return; }
         final int parts;
-        try { parts = benchmark ? Integer.parseInt(p[7]) : 4; } catch (Exception e) { return; }
+        try { parts = timelapse ? 1 : benchmark ? Integer.parseInt(p[7]) : 4; } catch (Exception e) { return; }
         if (parts != 1 && parts != 2 && parts != 4 && parts != 8) return;
         if (port < 1 || port > 65535) { reject(id, "address"); return; }
         if (at < System.currentTimeMillis()-30000 || at > System.currentTimeMillis()+3000) { reject(id, "clock"); return; }
@@ -81,7 +93,7 @@ final class NativePhotoParallelTransfer {
                 byte[] image;
                 if (benchmark) { image = new byte[3*1024*1024]; Arrays.fill(image, (byte) 65); }
                 else if (album) {
-                    long photoId = nextAlbumPhoto(after, at);
+                    long photoId = nextAlbumPhoto(after, at, through, timelapse);
                     if (photoId < 0) {
                         finish(id, "PARALLEL_PHOTO_EMPTY:" + id);
                         android.util.Log.i("ParallelPhoto", "album has no more photos");
@@ -136,14 +148,74 @@ final class NativePhotoParallelTransfer {
         android.util.Log.i("ParallelPhoto", "request rejected: " + reason);
         reply.send("PARALLEL_PHOTO_ERROR:" + id + ":" + reason);
     }
-    private long nextAlbumPhoto(long after, long requestedAt) {
+    private void markTimelapse(String message) {
+        String[] fields = message.split(":", -1);
+        if ((fields.length != 1 && fields.length != 3) || !fields[0].matches("[a-f0-9]{32}")) return;
+        String id = fields[0];
+        if (id.equals(activeMark)) {
+            if (lastMarkReply != null) reply.send(lastMarkReply);
+            return;
+        }
+        if (activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            activity.requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 145);
+            reply.send("TIMELAPSE_MARK_ERROR:" + id + ":permission");
+            return;
+        }
+        boolean closing = fields.length == 3;
+        if (closing && (!fields[1].matches("[0-9]{1,18}") || !fields[2].matches("[0-9]{1,5}"))) return;
+        long after = closing ? Long.parseLong(fields[1]) : 0;
+        int expected = closing ? Integer.parseInt(fields[2]) : 0;
+        if (closing && (expected < 1 || expected > 28800)) return;
+        activeMark = id;
+        lastMarkReply = null;
+        new Thread(() -> {
+            String result;
+            try {
+                long upper = after;
+                int count = 0;
+                long deadline = SystemClock.elapsedRealtime() + 4500;
+                do {
+                    String filter = MediaStore.Images.Media.RELATIVE_PATH + "=?";
+                    String[] args = {"DCIM/Camera/"};
+                    if (closing) {
+                        filter += " AND " + MediaStore.Images.Media._ID + ">? AND "
+                                + MediaStore.Images.Media.SIZE + ">0 AND " + MediaStore.Images.Media.IS_PENDING + "=0";
+                        args = new String[]{"DCIM/Camera/", Long.toString(after)};
+                    }
+                    try (Cursor cursor = activity.getContentResolver().query(IMAGES,
+                            new String[]{MediaStore.Images.Media._ID}, filter, args,
+                            MediaStore.Images.Media._ID + " DESC")) {
+                        if (cursor == null) throw new IllegalStateException("query");
+                        count = closing ? cursor.getCount() : 0;
+                        upper = cursor.moveToFirst() ? cursor.getLong(0) : after;
+                    }
+                    if (!closing || count >= expected || SystemClock.elapsedRealtime() >= deadline) break;
+                    Thread.sleep(300);
+                } while (true);
+                result = "TIMELAPSE_MARK_OK:" + id + ":" + upper + ":" + count;
+            } catch (Exception error) {
+                result = "TIMELAPSE_MARK_ERROR:" + id + ":query";
+            }
+            final String response = result;
+            activity.runOnUiThread(() -> {
+                if (id.equals(activeMark)) lastMarkReply = response;
+                reply.send(response);
+            });
+        }, "timelapse-photo-mark").start();
+    }
+
+    private long nextAlbumPhoto(long after, long requestedAt, long through, boolean timelapse) {
         String filter = MediaStore.Images.Media.RELATIVE_PATH + "=? AND "
                 + MediaStore.Images.Media._ID + ">? AND " + MediaStore.Images.Media.SIZE + ">0 AND "
                 + MediaStore.Images.Media.IS_PENDING + "=0";
-        if (after == 0) filter += " AND " + MediaStore.Images.Media.DATE_ADDED + ">=?";
-        String[] args = after == 0
-                ? new String[]{"DCIM/Camera/", "0", Long.toString(requestedAt / 1000 - 86400)}
-                : new String[]{"DCIM/Camera/", Long.toString(after)};
+        String[] args = {"DCIM/Camera/", Long.toString(after)};
+        if (timelapse) {
+            filter += " AND " + MediaStore.Images.Media._ID + "<=?";
+            args = new String[]{"DCIM/Camera/", Long.toString(after), Long.toString(through)};
+        } else if (after == 0) {
+            filter += " AND " + MediaStore.Images.Media.DATE_ADDED + ">=?";
+            args = new String[]{"DCIM/Camera/", "0", Long.toString(requestedAt / 1000 - 86400)};
+        }
         try (Cursor cursor = activity.getContentResolver().query(IMAGES,
                 new String[]{MediaStore.Images.Media._ID}, filter, args,
                 MediaStore.Images.Media._ID + " ASC")) {

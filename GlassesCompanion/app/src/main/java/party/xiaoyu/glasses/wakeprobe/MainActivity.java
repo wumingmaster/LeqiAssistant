@@ -794,7 +794,9 @@ public final class MainActivity extends Activity {
                 android.util.Log.i("LeqiOrganizerSync", "Reader request valid=" + (reply != null)
                         + " sent=" + sent + " transport=" + (reply == null ? "not-sent" : lastMessageResult));
                 return;
-            } else if ((received.startsWith("PHOTO_NATIVE_PARALLEL:") || received.startsWith("PHOTO_NATIVE_BENCH:") || received.startsWith("PHOTO_ALBUM_NEXT:"))) {
+            } else if ((received.startsWith("PHOTO_NATIVE_PARALLEL:") || received.startsWith("PHOTO_NATIVE_BENCH:") || received.startsWith("PHOTO_ALBUM_NEXT:")
+                    || received.startsWith(NativePhotoParallelTransfer.TIMELAPSE_NEXT)
+                    || received.startsWith(NativePhotoParallelTransfer.TIMELAPSE_MARK))) {
                 if (nativePhotoParallelTransfer == null) nativePhotoParallelTransfer = new NativePhotoParallelTransfer(MainActivity.this,
                         response -> runOnUiThread(() -> sendVoiceEvent(response)));
                 nativePhotoParallelTransfer.start(received.replaceAll("[^a-zA-Z0-9_:.\\-].*", ""));
@@ -929,7 +931,7 @@ public final class MainActivity extends Activity {
     private static String findMessage(String text) {
         if (text == null) return "";
         int start = -1;
-        for (String prefix : new String[]{SystemDataMirror.REQUEST, "PHOTO_ALBUM_NEXT:", "PHOTO_NATIVE_PARALLEL:", "PHOTO_NATIVE_BENCH:", "PHOTO_NATIVE_ARM:", "PHOTO_NATIVE_FETCH:", "PHOTO_NET_PROBE:", "PHOTO_LINK_START", "PHOTO_LINK_ACK:", "UPDATE_CHECK", "PREVIEW_START", "PREVIEW_STOP", "PAIR_OFFER:", "PAIR_SECRET:", "HOME_JSON:", "HOME:", "VOICE_CONFIRM_REQUEST:", "VOICE_RESULT:", "VOICE_STATUS:", "DIARY_ACCEPT:", "DIARY_STATUS:", "DIARY_EXIT"}) {
+        for (String prefix : new String[]{SystemDataMirror.REQUEST, NativePhotoParallelTransfer.TIMELAPSE_MARK, NativePhotoParallelTransfer.TIMELAPSE_NEXT, "PHOTO_ALBUM_NEXT:", "PHOTO_NATIVE_PARALLEL:", "PHOTO_NATIVE_BENCH:", "PHOTO_NATIVE_ARM:", "PHOTO_NATIVE_FETCH:", "PHOTO_NET_PROBE:", "PHOTO_LINK_START", "PHOTO_LINK_ACK:", "UPDATE_CHECK", "PREVIEW_START", "PREVIEW_STOP", "PAIR_OFFER:", "PAIR_SECRET:", "HOME_JSON:", "HOME:", "VOICE_CONFIRM_REQUEST:", "VOICE_RESULT:", "VOICE_STATUS:", "DIARY_ACCEPT:", "DIARY_STATUS:", "DIARY_EXIT"}) {
             int candidate = text.indexOf(prefix);
             if (candidate >= 0 && (start < 0 || candidate < start)) start = candidate;
         }
@@ -1147,7 +1149,7 @@ public final class MainActivity extends Activity {
         String memo = systemDataMirror.memoPreview();
         memoView.setVisibility(diaryMode || memo.isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
         memoView.setText(memo);
-        label.setText(bridgeState + "  " + connectionState + "\n" + directState + "  " + speechState + "\n小米同学 · v0.34");
+        label.setText(bridgeState + "  " + connectionState + "\n" + directState + "  " + speechState + "\n小米同学 · v0.56");
         if (previewUntil > android.os.SystemClock.elapsedRealtime()) {
             label.removeCallbacks(publishPreview); label.postDelayed(publishPreview, 300);
         }
