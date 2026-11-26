@@ -7,11 +7,13 @@ import UIKit
 struct TimelapsePlan {
     let interval: Int
     let duration: Int
+    let showsWatermark: Bool
 
-    init?(interval: Int, duration: Int) {
+    init?(interval: Int, duration: Int, showsWatermark: Bool = true) {
         guard (3...3600).contains(interval), (interval + 1...86400).contains(duration) else { return nil }
         self.interval = interval
         self.duration = duration
+        self.showsWatermark = showsWatermark
     }
 
     var frameCount: Int { (duration - 1) / interval + 1 }
@@ -172,7 +174,7 @@ final class GlassesTimelapse: ObservableObject {
             let working = directory.appendingPathComponent("进行中的延时摄影.mp4")
             if FileManager.default.fileExists(atPath: working.path) { try FileManager.default.removeItem(at: working) }
             defer { try? FileManager.default.removeItem(at: working) }
-            let encoder = TimelapseVideoWriter(url: working)
+            let encoder = TimelapseVideoWriter(url: working, showsWatermark: plan.showsWatermark)
             let message = await captureAndImport(plan, using: encoder)
             guard frames > 0 else {
                 await encoder.discard()
@@ -223,6 +225,7 @@ final class GlassesTimelapse: ObservableObject {
         }
         if let stopReason { return stopReason }
 
+        if plan.showsWatermark { await encoder.setWatermarkDate(Date()) }
         await takePhotos(plan, clock: clock)
         guard shutterCount > 0 else { return stopReason }
         endDate = nil

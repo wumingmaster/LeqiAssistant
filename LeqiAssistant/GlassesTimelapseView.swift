@@ -8,6 +8,7 @@ struct GlassesTimelapseView: View {
     @AppStorage("timelapse.interval") private var interval = "5"
     @AppStorage("timelapse.duration") private var duration = "2"
     @AppStorage("timelapse.durationUnit") private var durationUnit = DurationUnit.minutes
+    @AppStorage("timelapse.watermark") private var showsWatermark = true
     @State private var player: AVPlayer?
     @State private var showingPreview = false
     @FocusState private var editing: Field?
@@ -31,7 +32,7 @@ struct GlassesTimelapseView: View {
     private var plan: TimelapsePlan? {
         guard let interval = Int(interval), let units = Int(duration),
               (1...(86400 / durationUnit.seconds)).contains(units) else { return nil }
-        return TimelapsePlan(interval: interval, duration: units * durationUnit.seconds)
+        return TimelapsePlan(interval: interval, duration: units * durationUnit.seconds, showsWatermark: showsWatermark)
     }
 
     var body: some View {
@@ -44,6 +45,7 @@ struct GlassesTimelapseView: View {
                         Text(unit.rawValue).tag(unit)
                     }
                 }
+                Toggle("Rokid Glasses 2 水印", isOn: $showsWatermark)
             } footer: {
                 if let plan {
                     let seconds = Double(plan.frameCount) / Double(TimelapseVideoWriter.framesPerSecond)

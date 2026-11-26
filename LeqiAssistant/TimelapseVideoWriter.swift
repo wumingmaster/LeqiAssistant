@@ -8,6 +8,9 @@ actor TimelapseVideoWriter {
     static let framesPerSecond: Int32 = 24
 
     private let url: URL
+    private let showsWatermark: Bool
+    private var watermarkDate: Date?
+    private var watermark: CaptureWatermark.Overlay?
     private var writer: AVAssetWriter?
     private var input: AVAssetWriterInput?
     private var adaptor: AVAssetWriterInputPixelBufferAdaptor?
@@ -19,8 +22,13 @@ actor TimelapseVideoWriter {
         case invalidPhoto, cannotEncode, encoderTimedOut
     }
 
-    init(url: URL) {
+    init(url: URL, showsWatermark: Bool = true) {
         self.url = url
+        self.showsWatermark = showsWatermark
+    }
+
+    func setWatermarkDate(_ date: Date) {
+        watermarkDate = date
     }
 
     func append(_ data: Data) async throws {
@@ -73,6 +81,9 @@ actor TimelapseVideoWriter {
     private func start(width: Int, height: Int) throws {
         self.width = width - width % 2
         self.height = height - height % 2
+        if showsWatermark {
+            watermark = CaptureWatermark.overlay(width: self.width, height: self.height, date: watermarkDate)
+        }
         let writer = try AVAssetWriter(outputURL: url, fileType: .mp4)
         let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
             AVVideoCodecKey: AVVideoCodecType.h264,
@@ -123,6 +134,7 @@ actor TimelapseVideoWriter {
         context.interpolationQuality = .high
         context.draw(image, in: CGRect(x: (canvas.width - imageWidth) / 2, y: (canvas.height - imageHeight) / 2,
                                        width: imageWidth, height: imageHeight))
+        watermark?.draw(in: context)
         return pixelBuffer
     }
 }

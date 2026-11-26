@@ -74,6 +74,21 @@ struct AssistantView: View {
                         Label("眼镜延时摄影", systemImage: "timelapse")
                         if timelapse.active { ProgressView() }
                     }
+                    NavigationLink {
+                        VideoPanoramaView()
+                    } label: {
+                        Label("从视频生成全景", systemImage: "pano")
+                    }
+                    NavigationLink {
+                        SlowMotionView()
+                    } label: {
+                        Label("从视频生成慢镜头", systemImage: "slowmo")
+                    }
+                    NavigationLink {
+                        NightPhotoStackView()
+                    } label: {
+                        Label("夜景与星轨合成", systemImage: "moon.stars")
+                    }
                     if !photo.message.isEmpty {
                         Text(photo.message)
                             .foregroundStyle(.secondary)
